@@ -1,12 +1,27 @@
 package com.ms.email.rabbitmq;
 
+import com.ms.email.dto.EmailDto;
+import com.ms.email.model.Email;
+import com.ms.email.service.EmailService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.BeanUtils;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 @Component
 public class EmailConsumer {
-    @RabbitListener(queues = "order.queue")
-    public void receiveMessage(String message) {
-        System.out.println("Received: " + message);
+
+    private final EmailService emailService;
+
+    public EmailConsumer(EmailService emailService) {
+        this.emailService = emailService;
+    }
+
+    @RabbitListener(queues = "${broker.queue.email.name}")
+    public void listenEmailQueue(@Payload EmailDto emailRecordDto) {
+        var emailModel = new Email();
+        BeanUtils.copyProperties(emailRecordDto, emailModel);
+        emailService.sendEmail(emailModel);
+        System.out.println("Email enviado e registrado: " + emailModel.getEmailTo());
     }
 }
